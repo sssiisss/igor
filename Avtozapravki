@@ -1,1 +1,131 @@
+-- Таблица видов топлива
+CREATE TABLE Fuel (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    Type VARCHAR(50) NOT NULL,
+    Price DECIMAL(5,2) NOT NULL
+);
 
+-- Таблица насосов
+CREATE TABLE Pump (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    FuelID INT,
+    Working BOOL DEFAULT TRUE,
+    FOREIGN KEY (FuelID) REFERENCES Fuel(id)
+);
+
+-- Таблица сотрудников
+CREATE TABLE Employee (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    FirstName VARCHAR(50) NOT NULL,
+    LastName VARCHAR(50) NOT NULL,
+    Position VARCHAR(50) NOT NULL,
+    HireDate DATE NOT NULL
+);
+
+-- Таблица поставщиков
+CREATE TABLE Supplier (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    Name VARCHAR(100) NOT NULL,
+    ContactPhone VARCHAR(20)
+);
+
+-- Таблица поставок
+CREATE TABLE Delivery (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    SupplierID INT,
+    FuelID INT,
+    DeliveryDate DATETIME NOT NULL,
+    Quantity DECIMAL(10,2) NOT NULL,
+    TotalCost DECIMAL(10,2) NOT NULL,
+    FOREIGN KEY (SupplierID) REFERENCES Supplier(id),
+    FOREIGN KEY (FuelID) REFERENCES Fuel(id)
+);
+
+-- Таблица транзакций заправки
+CREATE TABLE FuelTransaction (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    PumpID INT,
+    EmployeeID INT,
+    AmountLiters DECIMAL(10,2) NOT NULL,
+    TransactionDate DATETIME DEFAULT CURRENT_TIMESTAMP,
+    TotalCost DECIMAL(10,2) NOT NULL,
+    FOREIGN KEY (PumpID) REFERENCES Pump(id),
+    FOREIGN KEY (EmployeeID) REFERENCES Employee(id)
+);
+
+-- Добавление видов топлива
+INSERT INTO Fuel (Type, Price) VALUES
+('Бензин', 1.50),
+('Дизель', 1.30);
+
+-- Добавление насосов
+INSERT INTO Pump (FuelID, Working) VALUES
+(1, TRUE),
+(1, FALSE),
+(2, TRUE),
+(2, TRUE);
+
+-- Добавление сотрудников
+INSERT INTO Employee (FirstName, LastName, Position, HireDate) VALUES
+('Иван', 'Иванов', 'Менеджер', '2020-01-15'),
+('Петр', 'Петров', 'Кассир', '2021-03-22');
+
+-- Добавление поставщиков
+INSERT INTO Supplier (Name, ContactPhone) VALUES
+('ПоставщикТоплива1', '123-456-7890'),
+('ПоставщикТоплива2', '987-654-3210');
+
+-- Добавление поставок
+INSERT INTO Delivery (SupplierID, FuelID, DeliveryDate, Quantity, TotalCost) VALUES
+(1, 1, '2023-01-01 10:00:00', 1000.0, 1500.0),
+(2, 2, '2023-01-02 11:00:00', 500.0, 650.0);
+
+-- Добавление транзакций заправки
+INSERT INTO FuelTransaction (PumpID, EmployeeID, AmountLiters, TotalCost) VALUES
+(1, 1, 40.0, 60.0),
+
+-- Суммарное количество проданного топлива по каждому его виду
+
+SELECT 
+    Fuel.Type AS 'Вид топлива',
+    SUM(FuelTransaction.AmountLiters) AS 'Общее количество литров'
+FROM 
+    FuelTransaction
+JOIN 
+    Pump ON FuelTransaction.PumpID = Pump.id
+JOIN 
+    Fuel ON Pump.FuelID = Fuel.id
+GROUP BY 
+    Fuel.Type;
+    
+-- Выручка по видам топлива
+
+SELECT 
+    Fuel.Type AS 'Вид топлива',
+    SUM(FuelTransaction.TotalCost) AS 'Общая выручка (руб)'
+FROM 
+    FuelTransaction
+JOIN 
+    Pump ON FuelTransaction.PumpID = Pump.id
+JOIN 
+    Fuel ON Pump.FuelID = Fuel.id
+GROUP BY 
+    Fuel.Type;
+
+-- Количество поставок топлива от каждого поставщика за все время
+
+SELECT 
+    Supplier.Name AS 'Поставщик топлива',
+    COUNT(*) AS 'Количество поставок'
+FROM 
+    Supplier
+JOIN 
+    Delivery ON Supplier.id = Delivery.SupplierID
+GROUP BY 
+    Supplier.Name;
+    
+  -- Удаление записи о транзакции заправки по id
+DELETE FROM FuelTransaction WHERE id = 1;
+
+-- Изменение цены топлива по id
+UPDATE Fuel SET Price = 1.60 WHERE id = 1;
